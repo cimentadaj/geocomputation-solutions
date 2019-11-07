@@ -1,0 +1,42 @@
+---
+title: 'Solutions chapter 2 - Geocomputation with R'
+author: Jorge Cimentada
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r knitr-setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.path = "../figs/",
+                      fig.align = "center",
+                      fig.asp = 0.618,
+                      out.width = "80%")
+```
+
+
+```{r }
+library(sf)          # classes and functions for vector data
+library(raster)
+library(spData)        # load geographic data
+library(spDataLarge)   # load larger geographic data
+```
+
+* Polygons are triangles, hexagons, [etc..](https://www.google.com/search?q=polygons&client=ubuntu&hs=cv5&channel=fs&sxsrf=ACYBGNSFXdoBGTZj7lM_eIktJZOvrAp1Qw:1573134047025&source=lnms&tbm=isch&sa=X&ved=0ahUKEwjnhLqAndjlAhUBDewKHfWOCbsQ_AUIESgB&biw=1760&bih=812#imgrc=nCyiyGCImczGoM)
+
+* Coordinates are relative to a point of reference. For example, the coordinates c(-0.1, 55.5) are degrees of distance relative to the center c(0, 0) which is in the equator.
+
+
+```{r }
+world_asia <- world[world$continent == "Asia", ]
+asia <- st_union(world_asia)
+
+# `add = TRUE` adds a plot to the previous plot
+plot(world['pop'], reset = FALSE)
+plot(asia, add = TRUE, col = "red")
+
+```
+
+
+You left off in section 2.2.4: https://geocompr.robinlovelace.net/spatial-class.html
