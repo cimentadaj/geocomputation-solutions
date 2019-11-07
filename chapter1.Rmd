@@ -1,0 +1,50 @@
+---
+title: 'Solutions chapter 1 - Geocomputation with R'
+author: Jorge Cimentada
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r knitr-setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.path = "../figs/",
+                      fig.align = "center",
+                      fig.asp = 0.618,
+                      out.width = "80%")
+```
+
+
+```{r }
+library(leaflet)
+popup = c("Robin", "Jakub", "Jannes")
+leaflet() %>%
+  addProviderTiles("NASAGIBS.ViirsEarthAtNight2012") %>%
+  addMarkers(lng = c(-3, 23, 11),
+             lat = c(52, 53, 49), 
+             popup = popup)
+```
+
+
+1. Think about the terms ‘GIS’, ‘GDS’ and ‘geocomputation’ described above. Which (if any) best describes the work you would like to do using geo* methods and software and why?
+
+I'm more interested in doing geocomputation, which in general related to solving spatial problems (both for visualization and for spatial statistics) both for pure scientific purposes as well as for day-to-day problems. This encompasses both some type of Geographic Data Science but also on the deep understanding of micro spatial patterns.
+
+2. Provide three reasons for using a scriptable language such as R for geocomputation instead of using an established GIS program such as QGIS.
+
+- Reproducibility
+- General purpose skills
+- Flexibility
+
+3. Name two advantages and two disadvantages of using mature vs recent packages for geographic data analysis (for example sp vs sf).
+
+* Using recent packages
+
+- Advantages:
+  - Up to date algorithms
+  - Usually, more intuitive and easy user interface
+  
+- Disadvantage
+  - More prone to bugs
+  - More unstable on the long terms (breaking changes)
