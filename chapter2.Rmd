@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE,
 ```
 
 
-# Notes
+## Notes
 
 ```{r }
 library(sf)          # classes and functions for vector data
@@ -123,4 +123,192 @@ st_sfc(point1, list1)
 
 ```
 
-You left in exercise 2.2.8: https://geocompr.robinlovelace.net/spatial-class.html
+
+```{r }
+# Simple point object
+lnd_point <- st_point(c(0.1, 51.5))
+
+# The point object becomes an sfc object
+# with a coordinate system. This stands for
+# sfc = simple feature column.
+lnd_geom <- st_sfc(lnd_point, crs = 4326)
+
+# data.frame, could be anything.
+lnd_attribute <- data.frame(
+  name = "London",
+  temperature = 25,
+  date = as.Date("2017-06-21")
+)
+
+# Combine data frame and geometry to form
+# an sf object. Dataframe + geom.
+st_sf(lnd_attribute, geometry = lnd_geom)
+```
+
+
+### Raster
+
+```{r }
+raster_filepath <- system.file("raster/srtm.tif", package = "spDataLarge")
+new_raster <- raster(raster_filepath)
+plot(new_raster)
+```
+
+```{r }
+
+new_raster2 = raster(nrows = 1000,
+                     ncols = 5,
+                     # If you specify res, then rows/cols are ignored
+                     ## res = 0.5, 
+                     xmn = -2000, xmx = 3000,
+                     ymn = -2000, ymx = 3000,
+                     vals = -2000:2999
+                     )
+
+```
+
+
+
+### Bricks
+
+```{r }
+multi_raster_file = system.file("raster/landsat.tif", package = "spDataLarge")
+r_brick = brick(multi_raster_file)
+```
+
+
+### CRS
+
+
+```{r }
+vector_filepath = system.file("vector/zion.gpkg", package = "spDataLarge")
+new_vector = st_read(vector_filepath)
+new_vector <- st_set_crs(new_vector, 4326)
+
+projection(new_raster)
+
+
+luxembourg = world[world$name_long == "Luxembourg", ]
+
+attributes(st_area(luxembourg))
+
+```
+
+
+## 2.6 Exercises
+
+1. Use summary() on the geometry column of the world data object. What does the output tell us about:
+
+```{r }
+summary(world$geom)
+```
+
+* Its geometry type?
+
+It's only composed of `MULTIPOLYGONS`, in fact, 177 `MULTIPOLYGONS`. However, each row should be a `POLYGON` because there aren't any more than two polygons for each country, right? For example:
+
+```{r }
+tst <- world[world$name_long == "China", ]
+
+# It says MULTIPOLYGON but this actually just one
+# polygon showing the deliminations of China.
+plot$geom
+
+# Here only see the main polygon.
+plot(tst$geom[[1]])
+```
+
+I think this is because the minimum number of polygons for a `MULTIPOLYGON` is 1, meaning that you can have at least 1 but more than one.
+
+* The number of countries?
+
+`177`, same number of `MULTIPOLYGONS`.
+
+* Its coordinate reference system (CRS)?
+
+It's a latitude/longitude CRS, the most common. Specified as `4326`. I think this is the Greenwhich reference system.
+
+
+2. Run the code that ‘generated’ the map of the world in Figure 2.5 at the end of Section 2.2.4. Find two similarities and two differences between the image on your computer and that in the book.
+
+```{r }
+
+plot(world['continent'], key.pos=NULL, reset = FALSE)
+pop <- sqrt(world[['pop']]) / 10000
+centroids <- st_geometry(st_centroid(world['pop']))
+plot(centroids, add = TRUE, cex = pop)
+
+```
+
+The first difference is that the circles are not in the same position in my plot and in the plot n the book. I suspect this is related to the latitude and longitude CRS because `st_centroid` is telling me that it can't plot centroids accurately in longitude/latitude data. Second difference is that the plot on the book is displayed on a globe shape while my plot is plotted on a XY axis. This is probably why the centroids are placed correctly in the plot in the book, since the CRS is probably not latitude and longitude.
+
+After looking at the code for the origina plot in the book, here it is:
+
+```{r }
+world_proj = st_transform(world, "+proj=eck4")
+world_cents = st_centroid(world_proj, of_largest_polygon = TRUE)
+par(mar = c(0, 0, 0, 0))
+# plot(st_geometry(world), graticule = TRUE, reset = FALSE)
+plot(world_proj["continent"], reset = FALSE, main = "", key.pos = NULL)
+g = st_graticule()
+g = st_transform(g, crs = "+proj=eck4")
+plot(g$geometry, add = TRUE, col = "lightgrey")
+cex = sqrt(world$pop) / 10000
+plot(st_geometry(world_cents), add = TRUE, cex = cex, lwd = 2, graticule = TRUE)
+
+```
+
+* What does the cex argument do (see ?plot)?
+
+It controls the size of the circle. For example, setting `cex = 1` will force all circles to be of the same size. By passing `pop` we allow each circle's size to proportational to their population.
+
+* Why was cex set to the sqrt(world$pop) / 10000?
+
+I know it's because the circle would be too big without `sqrt` and `/ 10000`. I assume this is related to the unit of the size corresponding with the units of the map projection. But I can't really explain why this is the case.
+
+* Bonus: experiment with different ways to visualize the global population. 
+
+3. Use plot() to create maps of Nigeria in context (see Section 2.2.4).
+
+```{r }
+nigeria <- world[world$name_long == "Nigeria", 0]
+plot(world[grepl("Western Africa|Northern Africa", world$subregion), 0], reset = FALSE)
+plot(nigeria, add = TRUE)
+```
+
+* Adjust the lwd, col and expandBB arguments of plot()
+
+```{r }
+nigeria <- world[world$name_long == "Nigeria", 0]
+plot(world[grepl("Western Africa|Northern Africa", world$subregion), 0], reset = FALSE)
+plot(nigeria, add = TRUE, lwd = 3, col = "grey")
+```
+
+* Challenge: read the documentation of text() and annotate the map
+```{r }
+nigeria <- world[world$name_long == "Nigeria", 0]
+plot(world[grepl("Western Africa|Northern Africa", world$subregion), 0], reset = FALSE)
+plot(nigeria, add = TRUE, lwd = 3, col = "grey")
+nig_centroid <- st_coordinates(st_centroid(nigeria)$geom)
+text(nig_centroid[, 1], nig_centroid[, 2], "Nigeria")
+```
+
+
+4. Create an empty RasterLayer object called my_raster with 10 columns and 10 rows. Assign random values between 0 and 10 to the new raster and plot it.
+
+```{r }
+my_raster <- raster(nrow = 10,
+                    ncol = 10,
+                    vals = sample(100))
+
+plot(my_raster)
+```
+
+5. Read-in the raster/nlcd2011.tif file from the spDataLarge package. What kind of information can you get about the properties of this file?
+
+```{r }
+rst_tif <- system.file("raster/nlcd2011.tif", package = "spDataLarge")
+raster(rst_tif)
+```
+
+It has 1359 rows and 1073 cols for a total of 1458207 cells. The values range from 11 to 95 and the units are expressed in meters.
