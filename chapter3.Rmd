@@ -1,0 +1,21 @@
+---
+title: 'Solutions chapter 3 - Geocomputation with R'
+author: Jorge Cimentada
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r knitr-setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.path = "../figs/",
+                      fig.align = "center",
+                      fig.asp = 0.618,
+                      out.width = "80%")
+```
+
+
+## Notes
+
+You left off beginning ch3: https://geocompr.robinlovelace.net/attr.html
