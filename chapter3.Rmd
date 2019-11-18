@@ -18,4 +18,240 @@ knitr::opts_chunk$set(echo = TRUE,
 
 ## Notes
 
-You left off beginning ch3: https://geocompr.robinlovelace.net/attr.html
+```{r }
+library(sf)
+library(raster)
+library(dplyr)
+library(stringr) # for working with strings (pattern matching)
+library(tidyr) # for unite() and separate()
+library(spData)
+
+sel_area = world$area_km2 < 10000
+summary(sel_area) # a logical vector
+small_countries = world[sel_area, ]
+
+
+# group by and aggregate on sf collapses smaller units
+# into bigger units
+world_agg2 = aggregate(world["pop"], by = list(world$continent),
+                       FUN = sum, na.rm = TRUE)
+world %>%
+  group_by(continent) %>%
+  summarize(tot_cont = sum(pop, na.rm = TRUE)) %>%
+  select(tot_cont) %>% 
+  plot()
+
+
+plot(
+  st_as_sf(
+    full_join(coffee_data, world)[c('coffee_production_2016', 'geom')]
+  )
+)
+
+elev = raster(nrows = 6,
+              ncols = 6,
+              res = 0.5,
+              xmn = -1.5,
+              xmx = 1.5,
+              ymn = -1.5,
+              ymx = 1.5,
+              vals = 1:36)
+
+```
+
+For these exercises we will use the `us_states` and `us_states_df` datasets from the spData package:
+
+```{r }
+library(spData)
+data(us_states)
+data(us_states_df)
+```
+
+`us_states` is a spatial object (of class sf), containing geometry and a few attributes (including name, region, area, and population) of states within the contiguous United States. `us_states_df` is a data frame (of class data.frame) containing the name and additional variables (including median income and poverty level, for the years 2010 and 2015) of US states, including Alaska, Hawaii and Puerto Rico. The data comes from the United States Census Bureau, and is documented in `?us_states` and `?us_states_df.`
+
+1. Create a new object called `us_states_name` that contains only the NAME column from the `us_states` object. What is the class of the new object and what makes it geographic?
+
+```{r }
+us_states_name <- us_states['NAME']
+
+class(us_states_name)
+```
+
+It is still an `sf` object because the `geometry` column is not dropped -- it's actually never dropped unless you explicitly drop it with `st_drop_geometry`.
+
+2. Select columns from the `us_states` object which contain population data. Obtain the same result using a different command (bonus: try to find three ways of obtaining the same result). Hint: try to use helper functions, such as contains or `starts_with` from dplyr (see ?contains).
+
+```{r }
+
+us_states %>%
+  select(total_pop_10, total_pop_15)
+
+us_states %>%
+  select(starts_with("total"))
+
+us_states %>%
+  select(contains("pop"))
+
+```
+
+
+3. Find all states with the following characteristics (bonus find and plot them):
+
+* Belong to the Midwest region.
+
+```{r }
+
+plot(us_states[0], reset = FALSE)
+us_states %>%
+  filter(REGION == "Midwest") %>%
+  .[0] %>% 
+  plot(add = TRUE, col = "red")
+
+```
+		
+* Belong to the West region, have an area below 250,000 km2 and in 2015 a population greater than 5,000,000 residents (hint: you may need to use the function `units::set_units()` or as.numeric()).
+		
+```{r }
+library(units)
+
+plot(us_states[0], reset = FALSE)
+us_states %>%
+  filter(REGION == "West",
+         AREA < set_units(250000, "km^2"),
+         total_pop_15 > 5000000) %>%
+  .[0] %>% 
+  plot(add = TRUE, col = "red")
+
+```
+
+* Belong to the South region, had an area larger than 150,000 km2 or a total population in 2015 larger than 7,000,000 residents.
+
+```{r }
+
+plot(us_states[0], reset = FALSE)
+us_states %>%
+  filter(REGION == "South",
+         AREA > set_units(150000, "km2") | total_pop_15 > 7000000) %>%
+  plot(add = TRUE, col = "red")
+
+```
+		
+4. What was the total population in 2015 in the us_states dataset? What was the minimum and maximum total population in 2015?
+
+```{r }
+
+# Total population
+sum(us_states$total_pop_15)  
+
+# Minimum and maximum
+summary(us_states$total_pop_15)
+```
+
+5. How many states are there in each region?
+
+```{r }
+
+us_states %>%
+  group_by(REGION) %>%
+  summarize(n = n()) %>%
+  select(n) %>% 
+  plot()
+
+```
+
+6. What was the minimum and maximum total population in 2015 in each region? What was the total population in 2015 in each region?
+
+```{r }
+
+us_states %>%
+  group_by(REGION) %>%
+  summarize(tot = sum(total_pop_15),
+            mini = min(total_pop_15),
+            maxi = max(total_pop_15))
+
+```
+
+7. Add variables from `us_states_df` to `us_states`, and create a new object called `us_states_stats`. What function did you use and why? Which variable is the key in both datasets? What is the class of the new object?
+
+```{r }
+
+us_states_stats <- (left_join(us_states, us_states_df, by = c("NAME" = "state")))
+
+class(us_states)
+
+```
+
+I used `left_join` and used `us_states` as the left dataset to preserve the `geometry` column. I had to manually specify the key names of each dataset, because they're different. The end result is an object which keeps the `sf` class because we're merging the `us_states_df` data frame **to** the `us_states` data frame, which is an `sf` object.
+
+8. `us_states_df` has two more rows than `us_states`. How can you find them? (hint: try to use the `dplyr::anti_join()` function)
+
+```{r }
+anti_join(us_states_df, us_states, by = c("state" = "NAME"))
+```
+
+9. What was the population density in 2015 in each state? What was the population density in 2010 in each state?
+
+```{r }
+
+pop_dens <-
+  us_states_stats %>%
+  mutate(pop_dens10 = total_pop_10 / AREA,
+         pop_dens15 = total_pop_15 / AREA)
+
+pop_dens %>%
+  select(contains("dens"))
+```
+
+10. How much has population density changed between 2010 and 2015 in each state? Calculate the change in percentages and map them.
+
+```{r }
+
+pop_dens %>%
+  transmute(dens_change = pop_dens10 / (pop_dens15 - pop_dens10)) %>%
+  plot()
+  
+```
+
+11. Change the columns’ names in us_states to lowercase. (Hint: helper functions - tolower() and colnames() may help.)
+
+```{r }
+
+us_states <-
+  us_states %>%
+  rename(name = NAME) %>%
+  mutate(name = tools::toTitleCase(name))
+
+us_states
+```
+
+12. Using `us_states` and `us_states_df` create a new object called `us_states_sel.` The new object should have only two variables - `median_income_15` and geometry. Change the name of the `median_income_15` column to Income.
+
+
+```{r }
+
+us_states %>%
+  left_join(us_states_df, by = c("name" = "state")) %>%
+  select(median_income_15, geometry)
+
+```
+
+13. Calculate the change in median income between 2010 and 2015 for each state. Bonus: What was the minimum, average and maximum median income in 2015 for each region? What is the region with the largest increase of the median income?
+
+```{r }
+
+us_states %>%
+  left_join(us_states_df, by = c("name" = "state")) %>%
+  select(median_income_10, median_income_15) %>%
+  mutate(diff = median_income_15 - median_income_10) %>%
+  select(diff) %>% 
+  plot()
+
+```
+
+
+14. Create a raster from scratch with nine rows and columns and a resolution of 0.5 decimal degrees (WGS84). Fill it with random numbers. Extract the values of the four corner cells.
+
+15. What is the most common class of our example raster grain (hint: modal())?
+
+16. Plot the histogram and the boxplot of the data(dem, package = "RQGIS") raster. 
+
