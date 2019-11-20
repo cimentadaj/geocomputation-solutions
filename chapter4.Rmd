@@ -1,0 +1,95 @@
+---
+title: 'Solutions chapter 4'
+author: Jorge Cimentada
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r knitr-setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.path = "../figs/",
+                      fig.align = "center",
+                      fig.asp = 0.618,
+                      out.width = "80%")
+```
+
+```{r }
+library(sf)
+library(raster)
+library(dplyr)
+library(spData)
+```
+
+
+```{r }
+
+
+canterbury <- nz %>% filter(Name == "Canterbury")
+canterbury_height <- nz_height[canterbury, ]
+
+plot(nz[0], reset = FALSE)
+plot(canterbury[0], add = TRUE, col = "grey")
+plot(nz_height[0], add = TRUE, col = "red")
+
+```
+
+
+```{r }
+
+
+## All heights that are in cantebury are excluded
+plot(nz[0], reset = FALSE)
+non_cnt_hgt <- nz_height[canterbury, , op = st_disjoint]
+plot(non_cnt_hgt, add = TRUE, col = "red")
+
+
+## All heights that are only in canterbury are keeped
+overlap <- nz_height[canterbury, , op = st_intersects]
+plot(nz[0], reset = FALSE)
+plot(overlap, add = TRUE, col = "red")
+
+```
+
+
+```{r }
+sel_sgbp <- st_intersects(x = nz_height, y = canterbury)
+# With this you can use see which values matched
+sel_sgbp
+```
+
+
+```{r }
+
+# Lines
+
+line_matrix <- matrix(c(rep(-1, 21), seq(-.5, 1.5, .1)), ncol = 2)
+
+line_str <- st_linestring(
+  line_matrix
+)
+
+
+# Points
+multi_p <- rbind(c(0.5, 0), c(-1, 0.5), c(0, 1), c(1, 1))
+
+point_str <- st_multipoint(multi_p)
+
+# Multipolygons
+multi_polygons <-
+  list(
+    rbind(c(-1, -1), c(1, -1), c(1, 1), c(-1, -1))
+  )
+
+polygon_str <- st_polygon(multi_polygons)
+
+
+plot(polygon_str, col = "grey", border = "red", reset = FALSE, axes = TRUE)
+plot(point_str, add = TRUE)
+plot(line_str, add = TRUE)
+
+```
+
+
+You left off at Figure 4.2: https://geocompr.robinlovelace.net/spatial-operations.html

@@ -251,7 +251,60 @@ us_states %>%
 
 14. Create a raster from scratch with nine rows and columns and a resolution of 0.5 decimal degrees (WGS84). Fill it with random numbers. Extract the values of the four corner cells.
 
+```{r }
+vals <- 2.2
+
+set.seed(231312)
+res <- raster(
+  nrows = 9,
+  ncols = 9,
+  res = 0.5,
+  xmn = -vals,
+  xmx = vals,
+  ymn = -vals,
+  ymx = vals,
+  vals = sample(81)
+)
+
+# Top left
+res[1, 1]
+
+# Bottom left
+res[nrow(res), 1]
+
+# Top right
+res[1, ncol(res)]
+
+# Bottom right
+res[nrow(res), ncol(res)]
+```
+
 15. What is the most common class of our example raster grain (hint: modal())?
+
+```{r }
+
+grain_size = c("clay", "silt", "sand")
+grain = raster(nrow = 6, ncol = 6, res = 0.5, 
+               xmn = -1.5, xmx = 1.5, ymn = -1.5, ymx = 1.5,
+               vals = factor(sample(grain_size, 36, replace = TRUE), 
+                             levels = grain_size))
+cellStats(grain, modal) %>%
+  factorValues(grain, .)
+
+factorValues(grain, modal(values(grain)))
+
+modal(res)
+
+```
 
 16. Plot the histogram and the boxplot of the data(dem, package = "RQGIS") raster. 
 
+```{r }
+
+data(dem, package = "RQGIS")
+
+hist(dem)
+
+boxplot(dem)
+
+```
