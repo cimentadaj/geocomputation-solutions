@@ -92,4 +92,29 @@ plot(line_str, add = TRUE)
 ```
 
 
+```{r }
+
+st_intersects(point_str, point_str)
+
+set.seed(2018)
+bb_world <- st_bbox(world)
+random_df = tibble(
+  x = runif(n = 10, min = bb_world[1], max = bb_world[3]),
+  y = runif(n = 10, min = bb_world[2], max = bb_world[4])
+)
+
+random_points = random_df %>% 
+  st_as_sf(coords = c("x", "y")) %>% # set coordinates
+  st_set_crs(4326) # set geographic CRS
+
+
+plot(world[0], reset = FALSE)
+plot(world[random_points, ], add = TRUE, col = "red")
+
+
+plot(st_geometry(cycle_hire), col = "blue")
+plot(st_geometry(cycle_hire_osm), add = TRUE, pch = 3, col = "red")
+
+```
+
 You left off at Figure 4.2: https://geocompr.robinlovelace.net/spatial-operations.html
